@@ -1,47 +1,101 @@
-# Environment
+# =========================
+# Environment / secrets
+# =========================
 .env
+.env.*
+!.env.example
+
 venv/
 .venv/
+env/
+ENV/
 
+# =========================
 # Python
+# =========================
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.ipynb_checkpoints/
+*.py[cod]
+*$py.class
 
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
 # OS / editor
+# =========================
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# Large raw data and videos
-data/raw/*
-data/processed/*.mp4
-data/processed/*.avi
-data/processed/*.mov
-data/processed/*.mkv
+# =========================
+# Kaggle temporary folders
+# =========================
+kaggle/working/
+kaggle/input/
+working/
+input/
 
-# Keep folder structure
+# =========================
+# Raw data / datasets
+# =========================
+data/raw/*
+data/processed/*
+data/sample_videos/*
+
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/sample_videos/.gitkeep
 
+# =========================
+# Large videos
+# =========================
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+
+# Keep screenshots/images
+!*.jpg
+!*.jpeg
+!*.png
+
+# =========================
 # Model weights
+# =========================
 *.pt
 *.pth
 *.ckpt
 *.onnx
 *.h5
+*.weights
 
-# Outputs that are too large
+# =========================
+# Large generated outputs
+# =========================
 outputs/videos/
 outputs/temp/
 outputs/cache/
 
-# Logs
-*.log
+results/videos/*.mp4
+results/videos/*.avi
+results/videos/*.mov
+results/videos/*.mkv
 
-# Kaggle temporary files
-kaggle/working/
-kaggle/input/
+# Keep important CSV/XLSX/JPG outputs
+!results/benchmark/*.csv
+!results/benchmark/*.xlsx
+!results/visualizations/*.jpg
+!results/visualizations/*.png
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
