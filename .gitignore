@@ -1,0 +1,47 @@
+# Environment
+.env
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Large raw data and videos
+data/raw/*
+data/processed/*.mp4
+data/processed/*.avi
+data/processed/*.mov
+data/processed/*.mkv
+
+# Keep folder structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Model weights
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.h5
+
+# Outputs that are too large
+outputs/videos/
+outputs/temp/
+outputs/cache/
+
+# Logs
+*.log
+
+# Kaggle temporary files
+kaggle/working/
+kaggle/input/
