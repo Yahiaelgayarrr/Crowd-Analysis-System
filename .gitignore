@@ -99,3 +99,5 @@ results/videos/*.mkv
 # =========================
 *.log
 logs/
+data/raw/*
+!data/raw/.gitkeep
