@@ -1,0 +1,2 @@
+outlier_threshold_total_count,outlier_frames_removed,processed_frames_original,processed_frames_cleaned,video_duration_sec,estimated_fps,mean_total_count,median_total_count,min_total_count,max_total_count,std_total_count,mean_inference_time_sec,median_inference_time_sec,mean_inference_fps,median_inference_fps,min_inference_fps,max_inference_fps
+500,94,4627,4533,153.95628601685758,30.047490230398875,141.27443194352526,116.0,81,457,56.078486888227,0.056461141358246536,0.0560469627380371,17.809666023194026,17.842180042368916,0.6963905707514911,19.64535997489473

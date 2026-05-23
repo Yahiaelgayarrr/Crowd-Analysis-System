@@ -1,0 +1,39 @@
+CLEANED SHINJUKU CROWD ANALYSIS INSIGHTS
+=======================================================
+
+Outlier Handling
+- Outlier threshold: total_count > 500.
+- Removed 94 outlier frames from 4627 original frames.
+- These rare frames were excluded because they were inconsistent with the visual video output.
+
+1. Global Crowd Count
+- Cleaned average estimated total crowd count: 141.27.
+- Cleaned median estimated total crowd count: 116.00.
+- Cleaned maximum estimated total crowd count: 457.
+- Cleaned peak occurred at 16.37 seconds, frame 492.
+- Cleaned standard deviation: 56.08.
+
+2. Inference Performance
+- Average FIDTM inference FPS: 17.81.
+- Average inference time per frame: 0.0565 seconds.
+
+3. Zone Occupancy
+- Highest average count zone: sidewalk_right with mean count 43.03.
+- Highest cleaned peak count zone: crosswalk_main with max count 161.
+
+4. Zone Density
+- Highest average density zone: sidewalk_right with mean density 0.00040971.
+- Highest maximum density zone: crosswalk_top with max density 0.00117013.
+- Density is more informative than raw count because every polygon zone has a different area.
+
+5. Risk Duration
+- Longest HIGH/CRITICAL risk duration zone: sidewalk_right lasting 143.67 seconds.
+- This equals 95.23% of cleaned frames for that zone.
+
+6. Temporal Density Trend
+- Highest accumulation percentage zone: sidewalk_left with 26.85% accumulating frames.
+- This is the first behavior-analysis step before optical-flow motion analysis.
+
+Conclusion
+- The cleaned results provide reliable quantitative evidence for count trends, density trends, risk duration, and early behavior indicators.
+- These results should be used for thesis tables and figures instead of the original outlier-included analysis.
