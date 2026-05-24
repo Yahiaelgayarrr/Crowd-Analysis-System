@@ -1,0 +1,57 @@
+zone_a,zone_b,best_lag_frames,best_lag_seconds,best_correlation,interpretation
+crosswalk_left,crosswalk_main,-64,-2.1305378357967584,0.8763574986298815,crosswalk_main tends to lead crosswalk_left by 2.13s
+crosswalk_main,crosswalk_left,64,2.1305378357967584,0.8763574986298814,crosswalk_main tends to lead crosswalk_left by 2.13s
+crosswalk_bottom,crosswalk_top,5,0.16644826842162175,0.6241024528559285,crosswalk_bottom tends to lead crosswalk_top by 0.17s
+crosswalk_top,crosswalk_bottom,-5,-0.16644826842162175,0.6241024528559284,crosswalk_bottom tends to lead crosswalk_top by 0.17s
+sidewalk_bottom,sidewalk_left,-8,-0.2663172294745948,0.593749612054975,sidewalk_left tends to lead sidewalk_bottom by 0.27s
+sidewalk_left,sidewalk_bottom,8,0.2663172294745948,0.593749612054975,sidewalk_left tends to lead sidewalk_bottom by 0.27s
+sidewalk_right,sidewalk_bottom,0,0.0,0.47596291185779804,sidewalk_right and sidewalk_bottom peak at approximately the same time
+sidewalk_bottom,sidewalk_right,0,0.0,0.47596291185779804,sidewalk_bottom and sidewalk_right peak at approximately the same time
+sidewalk_right,sidewalk_left,0,0.0,0.4054380646290336,sidewalk_right and sidewalk_left peak at approximately the same time
+sidewalk_left,sidewalk_right,0,0.0,0.4054380646290336,sidewalk_left and sidewalk_right peak at approximately the same time
+sidewalk_top,sidewalk_right,0,0.0,0.24356617366114205,sidewalk_top and sidewalk_right peak at approximately the same time
+sidewalk_right,sidewalk_top,0,0.0,0.24356617366114205,sidewalk_right and sidewalk_top peak at approximately the same time
+crosswalk_top,sidewalk_left,-143,-4.760420476858382,0.14474277786897358,sidewalk_left tends to lead crosswalk_top by 4.76s
+sidewalk_left,crosswalk_top,143,4.760420476858382,0.14474277786897358,sidewalk_left tends to lead crosswalk_top by 4.76s
+sidewalk_top,sidewalk_left,150,4.993448052648652,0.13089369088821476,sidewalk_top tends to lead sidewalk_left by 4.99s
+sidewalk_left,sidewalk_top,-150,-4.993448052648652,0.13089369088821473,sidewalk_top tends to lead sidewalk_left by 4.99s
+crosswalk_bottom,sidewalk_left,-150,-4.993448052648652,0.12921499335295156,sidewalk_left tends to lead crosswalk_bottom by 4.99s
+sidewalk_left,crosswalk_bottom,150,4.993448052648652,0.12921499335295156,sidewalk_left tends to lead crosswalk_bottom by 4.99s
+sidewalk_top,sidewalk_bottom,0,0.0,0.12246833042871182,sidewalk_top and sidewalk_bottom peak at approximately the same time
+sidewalk_bottom,sidewalk_top,0,0.0,0.12246833042871182,sidewalk_bottom and sidewalk_top peak at approximately the same time
+sidewalk_bottom,crosswalk_bottom,150,4.993448052648652,0.09165546420599333,sidewalk_bottom tends to lead crosswalk_bottom by 4.99s
+crosswalk_bottom,sidewalk_bottom,-150,-4.993448052648652,0.09165546420599333,sidewalk_bottom tends to lead crosswalk_bottom by 4.99s
+crosswalk_top,sidewalk_bottom,-150,-4.993448052648652,0.08189701351156291,sidewalk_bottom tends to lead crosswalk_top by 4.99s
+sidewalk_bottom,crosswalk_top,150,4.993448052648652,0.08189701351156291,sidewalk_bottom tends to lead crosswalk_top by 4.99s
+sidewalk_top,crosswalk_left,-150,-4.993448052648652,-0.0018263946929066848,crosswalk_left tends to lead sidewalk_top by 4.99s
+crosswalk_left,sidewalk_top,150,4.993448052648652,-0.0018263946929066848,crosswalk_left tends to lead sidewalk_top by 4.99s
+sidewalk_right,crosswalk_top,150,4.993448052648652,-0.03001332525065851,sidewalk_right tends to lead crosswalk_top by 4.99s
+crosswalk_top,sidewalk_right,-150,-4.993448052648652,-0.030013325250658515,sidewalk_right tends to lead crosswalk_top by 4.99s
+crosswalk_main,sidewalk_top,-150,-4.993448052648652,-0.051145515953630656,sidewalk_top tends to lead crosswalk_main by 4.99s
+sidewalk_top,crosswalk_main,150,4.993448052648652,-0.051145515953630656,sidewalk_top tends to lead crosswalk_main by 4.99s
+sidewalk_top,crosswalk_bottom,-150,-4.993448052648652,-0.06340013318777304,crosswalk_bottom tends to lead sidewalk_top by 4.99s
+crosswalk_bottom,sidewalk_top,150,4.993448052648652,-0.06340013318777304,crosswalk_bottom tends to lead sidewalk_top by 4.99s
+sidewalk_right,crosswalk_bottom,0,0.0,-0.08724838105508803,sidewalk_right and crosswalk_bottom peak at approximately the same time
+crosswalk_bottom,sidewalk_right,0,0.0,-0.08724838105508805,crosswalk_bottom and sidewalk_right peak at approximately the same time
+crosswalk_top,sidewalk_top,146,4.860289437911355,-0.12789487477850195,crosswalk_top tends to lead sidewalk_top by 4.86s
+sidewalk_top,crosswalk_top,-146,-4.860289437911355,-0.12789487477850195,crosswalk_top tends to lead sidewalk_top by 4.86s
+crosswalk_top,crosswalk_left,-70,-2.3302757579027045,-0.16494184087353433,crosswalk_left tends to lead crosswalk_top by 2.33s
+crosswalk_left,crosswalk_top,70,2.3302757579027045,-0.16494184087353433,crosswalk_left tends to lead crosswalk_top by 2.33s
+crosswalk_main,crosswalk_top,-81,-2.6964619484302723,-0.19417063679352753,crosswalk_top tends to lead crosswalk_main by 2.70s
+crosswalk_top,crosswalk_main,81,2.6964619484302723,-0.19417063679352753,crosswalk_top tends to lead crosswalk_main by 2.70s
+sidewalk_right,crosswalk_left,-150,-4.993448052648652,-0.2546422898315584,crosswalk_left tends to lead sidewalk_right by 4.99s
+crosswalk_left,sidewalk_right,150,4.993448052648652,-0.2546422898315584,crosswalk_left tends to lead sidewalk_right by 4.99s
+crosswalk_bottom,crosswalk_main,150,4.993448052648652,-0.31257383968594776,crosswalk_bottom tends to lead crosswalk_main by 4.99s
+crosswalk_main,crosswalk_bottom,-150,-4.993448052648652,-0.31257383968594776,crosswalk_bottom tends to lead crosswalk_main by 4.99s
+crosswalk_bottom,crosswalk_left,149,4.960158398964328,-0.3366284606820287,crosswalk_bottom tends to lead crosswalk_left by 4.96s
+crosswalk_left,crosswalk_bottom,-149,-4.960158398964328,-0.3366284606820287,crosswalk_bottom tends to lead crosswalk_left by 4.96s
+crosswalk_left,sidewalk_left,150,4.993448052648652,-0.3665684948109919,crosswalk_left tends to lead sidewalk_left by 4.99s
+sidewalk_left,crosswalk_left,-150,-4.993448052648652,-0.3665684948109919,crosswalk_left tends to lead sidewalk_left by 4.99s
+sidewalk_bottom,crosswalk_left,-150,-4.993448052648652,-0.39114067723329793,crosswalk_left tends to lead sidewalk_bottom by 4.99s
+crosswalk_left,sidewalk_bottom,150,4.993448052648652,-0.39114067723329793,crosswalk_left tends to lead sidewalk_bottom by 4.99s
+crosswalk_main,sidewalk_right,-150,-4.993448052648652,-0.44631539272467635,sidewalk_right tends to lead crosswalk_main by 4.99s
+sidewalk_right,crosswalk_main,150,4.993448052648652,-0.44631539272467635,sidewalk_right tends to lead crosswalk_main by 4.99s
+sidewalk_left,crosswalk_main,-150,-4.993448052648652,-0.5010198042554173,crosswalk_main tends to lead sidewalk_left by 4.99s
+crosswalk_main,sidewalk_left,150,4.993448052648652,-0.5010198042554173,crosswalk_main tends to lead sidewalk_left by 4.99s
+crosswalk_main,sidewalk_bottom,150,4.993448052648652,-0.5120061062805261,crosswalk_main tends to lead sidewalk_bottom by 4.99s
+sidewalk_bottom,crosswalk_main,-150,-4.993448052648652,-0.5120061062805261,crosswalk_main tends to lead sidewalk_bottom by 4.99s

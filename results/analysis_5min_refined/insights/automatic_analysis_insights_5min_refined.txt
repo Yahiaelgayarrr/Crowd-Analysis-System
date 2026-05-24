@@ -1,0 +1,63 @@
+REFINED 5-MINUTE SHINJUKU CROWD ANALYSIS INSIGHTS
+======================================================================
+
+Dataset Overview
+- Video duration: 308.53 seconds.
+- Processed frames: 9269.
+- Estimated video FPS: 30.04.
+- Number of zones: 8.
+
+1. Global Crowd Timeline
+- Average total count: 172.55.
+- Median total count: 158.00.
+- Maximum total count: 323.
+- Peak moment occurred at 172.64 seconds, frame 5186.
+- Standard deviation of total count: 46.70.
+
+2. Full Pipeline Performance
+- Average full-pipeline FPS: 1.62.
+- Average processing time per frame: 0.6189 seconds.
+- This is the full offline pipeline speed, including inference, point extraction, zone assignment, visualization, and logging.
+
+3. Zone Hotspot Ranking
+- Highest average count zone: sidewalk_right with mean count 45.96.
+- Highest peak count zone: crosswalk_main with max count 204.
+- Highest average density zone: sidewalk_top with mean density 0.00051447.
+- Highest maximum density zone: crosswalk_top with max density 0.00320410.
+- Density is pixel-based and relative to polygon area, not real-world persons per square meter.
+
+4. Risk Time Distribution
+- Longest HIGH/CRITICAL risk duration zone: sidewalk_right.
+- HIGH/CRITICAL duration: 302.07 seconds.
+- HIGH/CRITICAL percentage: 97.90% of frames for that zone.
+
+5. Temporal Density Trend
+- Highest accumulation percentage zone: sidewalk_top.
+- Accumulating frames percentage: 26.49%.
+- This indicates which zone most frequently increased in density over time.
+
+6. Zone Correlation and Lead-Lag
+- Strongest lead-lag relationship: crosswalk_left and crosswalk_main with correlation 0.876.
+- Interpretation: crosswalk_main tends to lead crosswalk_left by 2.13s.
+- This helps identify zones that fill together or sequentially.
+
+7. Refined Anomaly Detection
+- The sudden spike rule was refined to avoid counting tiny percentage changes as anomalies.
+- Refined sudden spike events detected: 137.
+- Zone with most refined spike events: sidewalk_top with 35 events.
+- Refined spike rule: current count >= 20, absolute increase >= 10, percent increase >= 50%, compared to 30 frames earlier.
+- Refined multi-zone alert events detected: 6.
+- Total refined multi-zone alert duration: 22.47 seconds.
+- Refined multi-zone alert percentage of video: 7.28%.
+- Refined multi-zone rule: at least 3 HIGH/CRITICAL zones, total count above median, and duration of at least 3 seconds.
+
+8. Statistical Insights
+- Mean normalized crowd distribution entropy: 0.7265.
+- Highest entropy occurred at 98.94 seconds, meaning the crowd was most evenly spread across zones.
+- Lowest entropy occurred at 30.63 seconds, meaning the crowd was most concentrated in fewer zones.
+- The risk transition matrix shows how zone risk states evolve between consecutive frames.
+
+Conclusion
+- The refined 5-minute analysis provides reliable evidence for global crowd trends, zone hotspots, density behavior, risk duration, and statistical crowd distribution.
+- The anomaly section is now more selective and thesis-safe compared with the initial over-sensitive rule.
+- Motion-based stagnation or congestion detection is intentionally left for the optical-flow stage.

@@ -1,0 +1,7 @@
+event_start_frame,event_end_frame,event_start_sec,event_end_sec,event_duration_sec,peak_frame_id,peak_timestamp_sec,peak_high_or_critical_zone_count,peak_total_count,zones_high_or_critical_at_peak
+273,398,9.088075455820476,13.249282166360988,4.161206710540512,390,12.982964936886397,5,175.0,"crosswalk_main, sidewalk_bottom, sidewalk_left, sidewalk_right, sidewalk_top"
+453,566,15.080213118998811,18.84194398532744,3.7617308663286284,553,18.409178487431223,5,250.0,"crosswalk_left, crosswalk_main, sidewalk_bottom, sidewalk_right, sidewalk_top"
+4627,4720,154.03122759736758,157.1271653900097,3.0959377926421325,4640,154.4639930952638,5,204.0,"crosswalk_main, sidewalk_bottom, sidewalk_left, sidewalk_right, sidewalk_top"
+4769,4909,158.75835842054158,163.41890993634695,4.660551515805366,4814,160.25639283633618,5,268.0,"crosswalk_left, crosswalk_main, sidewalk_left, sidewalk_right, sidewalk_top"
+5113,5210,170.20999928794907,173.43909569532852,3.229096407379444,5194,172.90646123637933,5,316.0,"crosswalk_left, crosswalk_main, sidewalk_left, sidewalk_right, sidewalk_top"
+9009,9116,299.90649004207575,303.4684829862984,3.561992944222652,9033,300.7054417304995,4,263.0,"crosswalk_left, crosswalk_main, sidewalk_bottom, sidewalk_right"
