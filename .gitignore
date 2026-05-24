@@ -101,3 +101,6 @@ results/videos/*.mkv
 logs/
 data/raw/*
 !data/raw/.gitkeep
+# Dashboard converted videos
+results/videos_dashboard/
+results/videos_dashboard/*.mp4
