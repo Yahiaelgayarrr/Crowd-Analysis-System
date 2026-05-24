@@ -1,0 +1,31 @@
+{
+    "description": "Prototype count-based risk thresholds for zone-level crowd monitoring. These are image-space thresholds and are not physically calibrated safety limits.",
+    "count_thresholds": {
+        "low_max": 8,
+        "medium_max": 18,
+        "high_max": 30
+    },
+    "risk_levels": {
+        "LOW": {
+            "condition": "zone_count < 8",
+            "meaning": "Low occupancy"
+        },
+        "MEDIUM": {
+            "condition": "8 <= zone_count < 18",
+            "meaning": "Moderate occupancy"
+        },
+        "HIGH": {
+            "condition": "18 <= zone_count < 30",
+            "meaning": "High occupancy"
+        },
+        "CRITICAL": {
+            "condition": "zone_count >= 30",
+            "meaning": "Very high occupancy / prototype critical state"
+        }
+    },
+    "notes": [
+        "Risk is currently based on zone_count only.",
+        "Density, temporal growth, optical flow, and anomaly scores can be added in later versions.",
+        "These thresholds should be calibrated before any real safety deployment."
+    ]
+}

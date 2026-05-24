@@ -1,0 +1,152 @@
+# ============================================================
+# Crowd Analysis System Pipeline Configuration
+# ============================================================
+# This file documents the full pipeline used in the project.
+#
+# Main pipeline:
+#   1. Extract frame from video
+#   2. Annotate zones using Labelme
+#   3. Run FIDTM on full video
+#   4. Generate localization, heatmap, and zone-risk videos
+#   5. Save frame-level and zone-level CSV files
+#   6. Run refined 5-minute analysis
+#   7. Load results into dashboard
+#
+# Note:
+#   The FIDTM stage is GPU-heavy and was run on Kaggle.
+#   The analysis stage can run locally from the saved CSV files.
+# ============================================================
+
+project:
+  name: "Intelligent Crowd Monitoring and Behavioral Analysis System"
+  experiment_name: "5-minute Shinjuku crossing"
+  description: "FIDTM-based crowd counting, localization, zone density, risk, and temporal behavior analysis"
+
+data:
+  raw_dir: "data/raw"
+  input_video: "data/raw/final full 5 mins.mp4"
+  zone_frame: "data/raw/zone_frame.jpg"
+  labelme_zone_json: "data/raw/zone_frame.json"
+
+config:
+  zones_config: "config/zones_config.json"
+  risk_thresholds: "config/risk_thresholds.json"
+
+fidtm:
+  # These paths are examples. On Kaggle, use the Kaggle paths.
+  # Locally, use these only if the FIDTM repo/checkpoint are downloaded.
+  repo_dir: "external/FIDTM"
+  checkpoint_path: "models/fidtm/model_best_jhu.pth"
+  device: "cuda"
+  threshold: 0.20
+  nms_kernel_size: 3
+  max_points: 6000
+
+video_processing:
+  output_prefix: "FULL"
+  heatmap_sigma: 35.0
+  save_side_by_side: false
+  max_frames: null
+
+outputs:
+  root: "results"
+
+  videos_dir: "results/videos"
+  benchmark_dir: "results/benchmark"
+  visualizations_dir: "results/visualizations"
+  heatmaps_dir: "results/heatmaps"
+
+  localization_video: "results/videos/FULL_01_shinjuku_fidtm_localization_count.mp4"
+  heatmap_overlay_video: "results/videos/FULL_02_shinjuku_fidtm_heatmap_overlay_points.mp4"
+  heatmap_only_video: "results/videos/FULL_03_shinjuku_fidtm_heatmap_only_points.mp4"
+  zone_risk_video: "results/videos/FULL_04_shinjuku_fidtm_zone_density_risk.mp4"
+  side_by_side_video: "results/videos/FULL_05_shinjuku_side_by_side_outputs.mp4"
+
+  frame_counts_csv: "results/benchmark/FULL_01_shinjuku_frame_counts.csv"
+  zone_density_risk_csv: "results/benchmark/FULL_02_shinjuku_zone_density_risk.csv"
+
+  midframe_image: "results/visualizations/FULL_shinjuku_side_by_side_midframe.jpg"
+
+analysis:
+  output_dir: "results/analysis_5min_refined"
+  tables_dir: "results/analysis_5min_refined/tables"
+  figures_dir: "results/analysis_5min_refined/figures"
+  insights_dir: "results/analysis_5min_refined/insights"
+  zip_backup_dir: "results/analysis_5min_refined/zip_backup"
+
+  rolling_window_seconds: 5
+  lead_lag_max_seconds: 5
+
+risk_classifier:
+  type: "rule_based_count_thresholds"
+  note: "Prototype image-space thresholds, not physically calibrated safety thresholds."
+
+  thresholds:
+    low_max: 8
+    medium_max: 18
+    high_max: 30
+
+  labels:
+    - "LOW"
+    - "MEDIUM"
+    - "HIGH"
+    - "CRITICAL"
+
+refined_anomaly_detection:
+  sudden_spike:
+    window_frames: 30
+    min_current_count: 20
+    min_absolute_increase: 10
+    min_percent_increase: 50.0
+    min_event_gap_seconds: 3.0
+
+  multi_zone_alert:
+    min_high_critical_zones: 3
+    require_total_count_above_median: true
+    min_alert_duration_seconds: 3.0
+
+dashboard:
+  app: "src/dashboard/app.py"
+  command: "streamlit run src/dashboard/app.py"
+
+commands:
+  extract_first_frame: >
+    python tools/extract_first_frame.py
+    --video "data/raw/final full 5 mins.mp4"
+    --output "data/raw/zone_frame.jpg"
+    --mode middle
+
+  open_labelme: >
+    labelme data/raw/zone_frame.jpg
+
+  copy_zones_to_config: >
+    copy data\raw\zone_frame.json config\zones_config.json
+
+  run_fidtm_video_pipeline_gpu: >
+    python src/pipeline/run_fidtm_video.py
+    --video "data/raw/final full 5 mins.mp4"
+    --zones "config/zones_config.json"
+    --fidtm-repo "external/FIDTM"
+    --checkpoint "models/fidtm/model_best_jhu.pth"
+    --output-root "results"
+    --prefix "FULL"
+
+  run_fidtm_video_pipeline_test_300_frames: >
+    python src/pipeline/run_fidtm_video.py
+    --video "data/raw/final full 5 mins.mp4"
+    --zones "config/zones_config.json"
+    --fidtm-repo "external/FIDTM"
+    --checkpoint "models/fidtm/model_best_jhu.pth"
+    --output-root "results"
+    --prefix "FULL"
+    --max-frames 300
+
+  run_refined_analysis_local: >
+    python src/pipeline/run_analysis_5min.py
+
+  run_refined_analysis_test: >
+    python src/pipeline/run_analysis_5min.py
+    --output-dir results/analysis_5min_refined_test
+
+  run_dashboard: >
+    streamlit run src/dashboard/app.py
