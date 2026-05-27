@@ -3,13 +3,17 @@ from __future__ import annotations
 """
 Main Crowd Analysis AI Agent.
 
-This file turns the dashboard assistant into a data-grounded AI agent.
+This file connects:
+- src/agent/tools.py   -> reads CSVs, detects intent, retrieves exact facts
+- src/agent/prompts.py -> builds thesis-safe, intent-aware LLM prompts
+- src/dashboard/app.py -> calls CrowdAnalysisAgent.answer(...)
 
-How it works:
+Agent flow:
 1. User asks a free question.
-2. Python tools retrieve relevant facts from CSV files.
-3. If an API key exists, Gemini/OpenAI explains those facts naturally.
-4. If no key or the API fails, the agent falls back to reliable rule-based answers.
+2. tools.detect_intent() identifies the request type, zones, timestamp, chart, etc.
+3. tools.build_context_text_for_question() extracts compact factual context from CSV outputs.
+4. Gemini/OpenAI explains the facts naturally.
+5. If API fails, answer_rule_based() gives a deterministic data-grounded fallback.
 
 Recommended Gemini package:
     pip install -U google-genai
@@ -18,6 +22,11 @@ Recommended Gemini package:
     GOOGLE_API_KEY=your_key_here
     CROWD_AGENT_PROVIDER=gemini
     CROWD_AGENT_DEBUG=1
+
+Important:
+- Do NOT commit .env to GitHub.
+- The LLM never receives full CSV files directly.
+- Python tools extract the relevant facts first.
 """
 
 from dataclasses import dataclass
@@ -26,21 +35,35 @@ from typing import Any, Dict, Optional
 import os
 import traceback
 
-from src.agent.prompts import SYSTEM_PROMPT, build_messages, build_user_prompt
+from src.agent.prompts import (
+    SYSTEM_PROMPT,
+    build_messages,
+    build_system_prompt_for_intent,
+    build_user_prompt,
+)
 from src.agent.tools import (
     LoadedCrowdData,
     answer_rule_based,
     build_context_for_question,
     build_context_text_for_question,
+    detect_intent,
     extract_zone_from_question,
     load_crowd_data,
     resolve_zone_name,
 )
 
 
+# ============================================================
+# DEFAULT MODELS
+# ============================================================
+
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 
+
+# ============================================================
+# RESPONSE OBJECT
+# ============================================================
 
 @dataclass
 class AgentResponse:
@@ -48,10 +71,16 @@ class AgentResponse:
     mode: str
     used_llm: bool
     selected_zone: Optional[str] = None
+    intent: Optional[str] = None
+    chart_name: Optional[str] = None
     context: Optional[Dict[str, Any]] = None
     context_text: Optional[str] = None
     error: Optional[str] = None
 
+
+# ============================================================
+# ENV LOADING
+# ============================================================
 
 def load_dotenv_if_available(project_root: Path) -> None:
     """
@@ -62,6 +91,8 @@ def load_dotenv_if_available(project_root: Path) -> None:
         OPENAI_API_KEY=...
         CROWD_AGENT_PROVIDER=gemini/openai/rule/auto
         CROWD_AGENT_DEBUG=1
+        CROWD_AGENT_GEMINI_MODEL=gemini-2.5-flash-lite
+        CROWD_AGENT_OPENAI_MODEL=gpt-4o-mini
     """
     env_path = project_root / ".env"
 
@@ -86,13 +117,20 @@ def load_dotenv_if_available(project_root: Path) -> None:
         return
 
 
+# ============================================================
+# AGENT
+# ============================================================
+
 class CrowdAnalysisAgent:
     """
     Data-grounded AI assistant for the crowd monitoring dashboard.
 
     Usage:
         agent = CrowdAnalysisAgent(project_root=PROJECT_ROOT)
-        answer = agent.answer("At 1:00 what was the risk classification in each zone?")
+        answer = agent.answer(
+            "At 1:00 what was the risk classification in each zone?",
+            selected_zone="sidewalk_right",
+        )
     """
 
     def __init__(
@@ -100,16 +138,31 @@ class CrowdAnalysisAgent:
         project_root: Optional[str | Path] = None,
         provider: Optional[str] = None,
         use_llm: Optional[bool] = None,
-        gemini_model: str = DEFAULT_GEMINI_MODEL,
-        openai_model: str = DEFAULT_OPENAI_MODEL,
+        gemini_model: Optional[str] = None,
+        openai_model: Optional[str] = None,
         debug: Optional[bool] = None,
     ) -> None:
-        self.project_root = Path(project_root).resolve() if project_root else Path(__file__).resolve().parents[2]
+        self.project_root = (
+            Path(project_root).resolve()
+            if project_root is not None
+            else Path(__file__).resolve().parents[2]
+        )
+
         load_dotenv_if_available(self.project_root)
 
         self.provider = (provider or os.getenv("CROWD_AGENT_PROVIDER", "auto")).lower().strip()
-        self.gemini_model = gemini_model
-        self.openai_model = openai_model
+
+        self.gemini_model = (
+            gemini_model
+            or os.getenv("CROWD_AGENT_GEMINI_MODEL")
+            or DEFAULT_GEMINI_MODEL
+        )
+
+        self.openai_model = (
+            openai_model
+            or os.getenv("CROWD_AGENT_OPENAI_MODEL")
+            or DEFAULT_OPENAI_MODEL
+        )
 
         if use_llm is None:
             self.use_llm = self.provider != "rule"
@@ -129,15 +182,21 @@ class CrowdAnalysisAgent:
 
     @property
     def data(self) -> LoadedCrowdData:
+        """
+        Lazy-load data once per agent instance.
+        """
         if self._data is None:
             self._data = load_crowd_data(self.project_root)
         return self._data
 
     def reload_data(self) -> None:
+        """
+        Force reload if CSV outputs were replaced.
+        """
         self._data = load_crowd_data(self.project_root)
 
     # ========================================================
-    # MAIN ANSWER METHODS
+    # MAIN ANSWER METHOD
     # ========================================================
 
     def answer(
@@ -146,6 +205,22 @@ class CrowdAnalysisAgent:
         selected_zone: Optional[str] = None,
         return_details: bool = False,
     ) -> str | AgentResponse:
+        """
+        Main method used by the dashboard.
+
+        Parameters:
+            question:
+                User's free-text question.
+
+            selected_zone:
+                Zone currently selected in dashboard. This is used only when useful.
+                The tools router ignores it for all-zone questions such as:
+                "At 1:00 list every zone."
+
+            return_details:
+                If True, returns AgentResponse with mode/intent/debug info.
+                If False, returns answer text only.
+        """
         question = str(question or "").strip()
 
         if not question:
@@ -154,6 +229,7 @@ class CrowdAnalysisAgent:
                 mode="empty",
                 used_llm=False,
                 selected_zone=selected_zone,
+                intent="empty",
             )
             return response if return_details else response.answer
 
@@ -164,26 +240,41 @@ class CrowdAnalysisAgent:
             if selected_zone:
                 resolved_selected_zone = resolve_zone_name(data, selected_zone) or selected_zone
 
-            zone_from_question = extract_zone_from_question(data, question)
-            zone_for_context = zone_from_question or resolved_selected_zone
+            # Detect intent once here so both LLM and debug details know the same route.
+            intent_info = detect_intent(
+                data=data,
+                question=question,
+                selected_zone=resolved_selected_zone,
+            )
+
+            intent = str(intent_info.get("intent", "general"))
+            chart_name = intent_info.get("chart_name")
+            zone_for_context = intent_info.get("zone_to_use")
+
+            # If tools did not decide zone_to_use, allow explicitly mentioned zone.
+            if zone_for_context is None:
+                zone_from_question = extract_zone_from_question(data, question)
+                zone_for_context = zone_from_question
 
             context_dict = build_context_for_question(
                 data=data,
                 question=question,
-                selected_zone=zone_for_context,
+                selected_zone=resolved_selected_zone,
             )
 
             context_text = build_context_text_for_question(
                 data=data,
                 question=question,
-                selected_zone=zone_for_context,
+                selected_zone=resolved_selected_zone,
             )
 
             if self.use_llm:
                 llm_answer = self._try_llm_answer(
                     question=question,
                     context_text=context_text,
-                    selected_zone=zone_for_context,
+                    selected_zone=zone_for_context or resolved_selected_zone,
+                    intent=intent,
+                    chart_name=chart_name,
                 )
 
                 if llm_answer:
@@ -191,23 +282,27 @@ class CrowdAnalysisAgent:
                         answer=llm_answer,
                         mode=self._active_provider_name(),
                         used_llm=True,
-                        selected_zone=zone_for_context,
+                        selected_zone=zone_for_context or resolved_selected_zone,
+                        intent=intent,
+                        chart_name=chart_name,
                         context=context_dict if self.debug else None,
                         context_text=context_text if self.debug else None,
                     )
                     return response if return_details else response.answer
 
-            fallback = answer_rule_based(
+            fallback_answer = answer_rule_based(
                 data=data,
                 question=question,
-                selected_zone=zone_for_context,
+                selected_zone=resolved_selected_zone,
             )
 
             response = AgentResponse(
-                answer=fallback,
+                answer=fallback_answer,
                 mode="rule",
                 used_llm=False,
-                selected_zone=zone_for_context,
+                selected_zone=zone_for_context or resolved_selected_zone,
+                intent=intent,
+                chart_name=chart_name,
                 context=context_dict if self.debug else None,
                 context_text=context_text if self.debug else None,
             )
@@ -228,23 +323,31 @@ class CrowdAnalysisAgent:
                 mode="error",
                 used_llm=False,
                 selected_zone=selected_zone,
+                intent="error",
                 error=error_text,
             )
 
             return response if return_details else response.answer
 
-    def quick_answer(self, action: str, selected_zone: Optional[str] = None) -> str:
-        action = str(action or "").strip().lower()
+    # ========================================================
+    # QUICK BUTTON SUPPORT
+    # ========================================================
 
-        if "risky" in action or "risk" in action:
+    def quick_answer(self, action: str, selected_zone: Optional[str] = None) -> str:
+        """
+        Helper for dashboard quick buttons.
+        """
+        action_lower = str(action or "").strip().lower()
+
+        if "risky" in action_lower or "risk" in action_lower:
             return str(
                 self.answer(
-                    "Which zone is the most risky and why?",
+                    "Which zone is the most risky and why? Give evidence from the data.",
                     selected_zone=selected_zone,
                 )
             )
 
-        if "peak" in action:
+        if "peak" in action_lower:
             return str(
                 self.answer(
                     "When was the peak crowd moment and what happened around it?",
@@ -252,7 +355,7 @@ class CrowdAnalysisAgent:
                 )
             )
 
-        if "selected" in action or "explain" in action or "zone" in action:
+        if "selected" in action_lower or "explain" in action_lower or "zone" in action_lower:
             zone = selected_zone or "the selected zone"
             return str(
                 self.answer(
@@ -261,10 +364,26 @@ class CrowdAnalysisAgent:
                 )
             )
 
-        if "anomaly" in action or "alert" in action:
+        if "anomaly" in action_lower or "alert" in action_lower or "spike" in action_lower:
             return str(
                 self.answer(
-                    "Summarize the anomaly detection and spike events.",
+                    "Summarize the anomaly detection and spike events. Explain what they mean.",
+                    selected_zone=selected_zone,
+                )
+            )
+
+        if "temporal" in action_lower:
+            return str(
+                self.answer(
+                    "Explain the temporal analysis and give a thesis-safe interpretation.",
+                    selected_zone=selected_zone,
+                )
+            )
+
+        if "recommend" in action_lower or "decision" in action_lower:
+            return str(
+                self.answer(
+                    "Give evidence-backed recommendations for crowd monitoring.",
                     selected_zone=selected_zone,
                 )
             )
@@ -276,6 +395,9 @@ class CrowdAnalysisAgent:
     # ========================================================
 
     def _active_provider_name(self) -> str:
+        """
+        Decide which backend is active.
+        """
         if self.provider in {"gemini", "google"}:
             return "gemini"
 
@@ -285,6 +407,7 @@ class CrowdAnalysisAgent:
         if self.provider == "rule":
             return "rule"
 
+        # auto mode
         if os.getenv("GOOGLE_API_KEY"):
             return "gemini"
 
@@ -297,7 +420,9 @@ class CrowdAnalysisAgent:
         self,
         question: str,
         context_text: str,
-        selected_zone: Optional[str] = None,
+        selected_zone: Optional[str],
+        intent: str,
+        chart_name: Optional[str],
     ) -> Optional[str]:
         provider = self._active_provider_name()
 
@@ -306,6 +431,8 @@ class CrowdAnalysisAgent:
                 question=question,
                 context_text=context_text,
                 selected_zone=selected_zone,
+                intent=intent,
+                chart_name=chart_name,
             )
 
         if provider == "openai":
@@ -313,19 +440,23 @@ class CrowdAnalysisAgent:
                 question=question,
                 context_text=context_text,
                 selected_zone=selected_zone,
+                intent=intent,
+                chart_name=chart_name,
             )
 
         return None
 
     # ========================================================
-    # GEMINI — NEW SDK: google-genai
+    # GEMINI — google-genai
     # ========================================================
 
     def _try_gemini_answer(
         self,
         question: str,
         context_text: str,
-        selected_zone: Optional[str] = None,
+        selected_zone: Optional[str],
+        intent: str,
+        chart_name: Optional[str],
     ) -> Optional[str]:
         api_key = os.getenv("GOOGLE_API_KEY")
 
@@ -338,6 +469,11 @@ class CrowdAnalysisAgent:
 
             client = genai.Client(api_key=api_key)
 
+            system_instruction = build_system_prompt_for_intent(
+                intent=intent,
+                chart_name=chart_name,
+            )
+
             prompt = build_user_prompt(
                 question=question,
                 context=context_text,
@@ -348,10 +484,10 @@ class CrowdAnalysisAgent:
                 model=self.gemini_model,
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
+                    system_instruction=system_instruction,
                     temperature=0.25,
                     top_p=0.85,
-                    max_output_tokens=900,
+                    max_output_tokens=1000,
                 ),
             )
 
@@ -376,7 +512,9 @@ class CrowdAnalysisAgent:
         self,
         question: str,
         context_text: str,
-        selected_zone: Optional[str] = None,
+        selected_zone: Optional[str],
+        intent: str,
+        chart_name: Optional[str],
     ) -> Optional[str]:
         api_key = os.getenv("OPENAI_API_KEY")
 
@@ -392,13 +530,15 @@ class CrowdAnalysisAgent:
                 question=question,
                 context=context_text,
                 selected_zone=selected_zone,
+                intent=intent,
+                chart_name=chart_name,
             )
 
             response = client.chat.completions.create(
                 model=self.openai_model,
                 messages=messages,
                 temperature=0.25,
-                max_tokens=900,
+                max_tokens=1000,
             )
 
             text = response.choices[0].message.content
@@ -428,6 +568,10 @@ class CrowdAnalysisAgent:
         return text
 
 
+# ============================================================
+# FACTORY
+# ============================================================
+
 def get_agent(
     project_root: Optional[str | Path] = None,
     provider: Optional[str] = None,
@@ -440,24 +584,41 @@ def get_agent(
     )
 
 
-if __name__ == "__main__":
+# ============================================================
+# CLI TEST
+# ============================================================
+
+def _demo() -> None:
     agent = CrowdAnalysisAgent()
 
     tests = [
-        "What are you?",
+        "What can you do?",
         "At 1:00 what was the risk classification in each zone?",
-        "Which zone is most risky?",
-        "When was the peak moment?",
-        "Explain sidewalk_right.",
+        "Explain temporal analysis and give a recommendation.",
+        "Explain the correlation heatmap.",
+        "Give evidence-backed recommendations for crowd monitoring.",
         "Compare sidewalk_right and crosswalk_main.",
     ]
 
-    for q in tests:
-        print("=" * 90)
-        print("Q:", q)
-        print("-" * 90)
-        result = agent.answer(q, selected_zone="sidewalk_right", return_details=True)
+    for question in tests:
+        print("=" * 100)
+        print("Q:", question)
+        print("-" * 100)
+
+        result = agent.answer(
+            question,
+            selected_zone="sidewalk_right",
+            return_details=True,
+        )
+
         print("MODE:", result.mode)
         print("USED_LLM:", result.used_llm)
+        print("INTENT:", result.intent)
+        print("CHART:", result.chart_name)
+        print()
         print(result.answer)
         print()
+
+
+if __name__ == "__main__":
+    _demo()
